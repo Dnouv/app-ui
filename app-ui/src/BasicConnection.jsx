@@ -14,6 +14,7 @@ import createEngine, {
 import { CanvasWidget } from "@projectstorm/react-canvas-core";
 
 import { LinkWidget } from "@projectstorm/react-diagrams-core";
+
 import "./styles.css";
 
 export class AdvancedLinkModel extends DefaultLinkModel {
@@ -170,7 +171,8 @@ const Diagram = () => {
   });
 
   model.registerListener({
-    linksUpdated: (e) => console.log("modelLinks", e),
+    linksUpdated: PostUpdate,
+    sourcePortChanged: (e) => console.log("sourcePortChanged", e),
   });
 
   model.addAll(port1.link(port2));
@@ -185,20 +187,19 @@ const Diagram = () => {
       nodesUpdated: (e) => console.log("nodesUpdated", e),
       linksUpdated: (e) => console.log("linksUpdated", e),
 
-      // the following maybe triggered
-
+      // these are never triggered
       zoomUpdated: (e) => console.log("zoomUpdated", e),
       gridUpdated: (e) => console.log("gridUpdated", e),
       offsetUpdated: (e) => console.log("offsetUpdated", e),
       entityRemoved: (e) => console.log("entityRemoved", e),
       selectionChanged: (e) => console.log("selectionChanged", e),
+      // maybe triggered
 
       sourcePortChanged: (e) => console.log("sourcePortChanged", e),
       targetPortChanged: (e) => console.log("targetPortChanged", e),
-      positionChanged: (e) => console.log("positionChanged", e), // triggers frequently
+      positionChanged: (e) => console.log("positionChanged", e),
     });
   });
-
   // load model into engine
   engine.setModel(model);
 
@@ -210,6 +211,62 @@ const Diagram = () => {
       </div>
     </div>
   );
+};
+
+async function postData(url = "", data = {}) {
+  const response = await fetch(url, {
+    method: "POST",
+    mode: "cors",
+    cache: "no-cache",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    redirect: "follow",
+    body: JSON.stringify(data),
+  });
+  return response; //return the response recieved
+}
+
+const PostUpdate = (state) => {
+  let isRun = false;
+
+  let toPublish = {
+    components: [],
+    links: [],
+  };
+
+  onmouseup = () => {
+    if (isRun === false) {
+      isRun = true;
+
+      let src = {};
+      let tgt = {};
+      let lnk = {};
+
+      src.id = state.link?.sourcePort.options.id;
+      src.name = state.link?.sourcePort.options.name;
+
+      if (state.link.targetPort != null) {
+        tgt.id = state.link?.targetPort.options.id;
+        tgt.name = state.link?.targetPort.options.name;
+
+        lnk.src = state.link?.sourcePort.options.id;
+        lnk.dest = state.link?.targetPort.options.id;
+      }
+
+      toPublish.components.push(src, tgt);
+      toPublish.links.push(lnk);
+
+      postData("/api/state/cache", { ...toPublish })
+        .then((data) => {
+          console.log("response sent", data);
+        })
+        .catch((err) => {
+          console.log("Oops! looks like we ran into an err!", err);
+        });
+    }
+  };
 };
 
 export default Diagram;
