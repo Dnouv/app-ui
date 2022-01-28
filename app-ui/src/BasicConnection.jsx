@@ -156,11 +156,11 @@ const Diagram = () => {
 
   // create some nodes
   let node1 = new DefaultNodeModel("Source", "rgb(0,192,255)");
-  let port1 = node1.addPort(new AdvancedPortModel(false, "out"));
+  let port1 = node1.addPort(new AdvancedPortModel(false, "Source"));
   node1.setPosition(100, 100);
 
   let node2 = new DefaultNodeModel("Destination", "rgb(192,255,0)");
-  let port2 = node2.addPort(new AdvancedPortModel(true, "in"));
+  let port2 = node2.addPort(new AdvancedPortModel(true, "Destination"));
   node2.setPosition(500, 350);
 
   let model = new DiagramModel();
